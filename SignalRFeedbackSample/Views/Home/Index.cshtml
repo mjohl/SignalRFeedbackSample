@@ -1,0 +1,58 @@
+﻿@{
+    ViewBag.Title = "SignalR Feedback";
+}
+<div class="row">
+    <div class="col-md-4">
+        <h2>Long API Call</h2>
+        <p>
+            When clicking the button a call of about 6 seconds 
+            long will run on the 'Test' API controller. 
+            The difference is that the API will use <strong>SignalR</strong> 
+            to provide feedback to the client of what is currently happening.
+        </p>
+        <p>
+            <input type="button" class="btn btn-primary" value="Make Call" id="btnGet" />
+        </p>
+        <div id="returnVal"></div>
+    </div>
+</div>
+@section scripts {
+    <script src="~/Scripts/jquery.signalR-2.1.2.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        $(function () {
+            //Declare a proxy to reference the hub "FeedbackHub.cs"
+            var feedback = $.connection.feedbackHub;
+
+            //Create the function that the hub can call back to display the messages.
+            feedback.client.addNewMessageToPage = function (message) {
+                //Empty the div content before diplasying the next message
+                $('#feedback').empty();
+                //Append the new message content to the emptied div
+                $('#feedback').append('<div class="pull-left">' + message + '</div><br />');
+            }
+
+            var connectionId = '';
+
+            //Start the connection
+            $.connection.hub.start().done(function () {
+                //Once the connection is complete we get the current clients Id
+                //to pass to the API. We only want to send the current client the message.
+                connectionId = $.connection.hub.id;
+            });
+
+            //Wire up the buttons click event
+            $('#btnGet').click(function () {
+
+                //Empty the div for the API return value
+                $('#returnVal').empty();
+
+                //Do the API call and pass the connection Id to the API
+                $.get("/api/Values", { connectionId: connectionId }, function (result) {
+                    //Display the API return string
+                    $('#returnVal').append(result);
+                }, null);
+            });
+        })
+    </script>
+}
